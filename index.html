@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BillEase - Online Billing System</title>
+
+<style>
+body { 
+  background:#eef3f9; 
+  font-family:Arial; 
+  text-align:center;
+}
+
+.section { display:none; }
+
+.login-box {
+  width:300px; 
+  margin:120px auto; 
+  padding:30px;
+  background:rgb(28, 57, 90); 
+  border-radius:8px;
+  box-shadow:0 0 10px #ccc;
+}
+
+input, button { 
+  width:90%; 
+  padding:10px; 
+  margin:8px;
+}
+
+button { 
+  background:#2563eb; 
+  color:rgb(255, 255, 255); 
+  border:none; 
+  border-radius:5px;
+  cursor:pointer;
+}
+
+.cards a {
+  display:inline-block; 
+  padding:20px; 
+  margin:10px;
+  background:white; 
+  border-radius:10px;
+  box-shadow:0 5px 10px #bbb;
+  text-decoration:none; 
+  color:black;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="login-box section" style="display:block;">
+<h2>BillEase</h2>
+
+<div style="display:flex; margin-bottom:20px;">
+  <button onclick="switchAuthTab('signin')" id="signinBtn" style="flex:1; padding:10px; background:#2563eb; color:white; border:none; cursor:pointer; border-radius:5px 0 0 5px; font-weight:bold;">Sign In</button>
+  <button onclick="switchAuthTab('register')" id="registerBtn" style="flex:1; padding:10px; background:#95a5a6; color:white; border:none; cursor:pointer; border-radius:0 5px 5px 0; font-weight:bold;">Register</button>
+</div>
+
+<!-- SIGN IN FORM -->
+<div id="signinForm" style="display:block;">
+  <input id="signinUser" placeholder="Username" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+  <input id="signinPass" type="password" placeholder="Password" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+  <button onclick="signin()" style="width:100%; padding:10px; background:#2563eb; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-top:10px;">Sign In</button>
+</div>
+
+<!-- REGISTER FORM -->
+<div id="registerForm" style="display:none;">
+  <input id="registerUser" placeholder="Username" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+  <input id="registerEmail" placeholder="Email" type="email" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+  <input id="registerPass" type="password" placeholder="Password" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+  <input id="registerConfirmPass" type="password" placeholder="Confirm Password" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+  <button onclick="register()" style="width:100%; padding:10px; background:#27ae60; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-top:10px;">Register</button>
+</div>
+
+<p id="authMessage" style="text-align:center; margin-top:15px; color:#e74c3c; min-height:20px;"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="section">
+<h1>Welcome to BillEase</h1>
+<div class="cards">
+  <a onclick="openSection('store')">🛒 Store Products</a>
+  <a onclick="openSection('invoice')">📋 Create Invoice</a>
+  <a onclick="openSection('products')">⚙️ Manage Products</a>
+  <a onclick="alert('Coming Soon')">📊 Sales Report</a>
+</div>
+</div>
+
+<!-- STORE PRODUCTS -->
+<div id="store" class="section">
+<h2>Store - Available Products</h2>
+<div style="text-align:right; margin:20px;">
+  <button onclick="openSection('invoice')" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
+    🛒 View Cart (<span id="cartCount">0</span>)
+  </button>
+  <button onclick="openSection('dashboard')" style="padding:10px 20px; background:#95a5a6; color:white; border:none; border-radius:5px; cursor:pointer; margin-left:10px;">Back</button>
+</div>
+<div id="storeProducts"></div>
+</div>
+
+<!-- INVOICE -->
+<div id="invoice" class="section">
+<h2>Shopping Cart & Invoice</h2>
+<input id="customer" placeholder="Customer Name" style="width:90%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px;">
+<input id="invoiceGst" type="number" placeholder="GST %" value="18" style="width:90%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px;">
+
+<h3 style="margin-top:20px;">Cart Items:</h3>
+<div id="cartItems" style="border:1px solid #ddd; padding:15px; border-radius:5px; max-height:300px; overflow-y:auto; background:#f9f9f9;">
+  <p style="color:#999; text-align:center;">Your cart is empty</p>
+</div>
+
+<div style="margin-top:20px; padding:15px; background:#f0f0f0; border-radius:5px;">
+  <p style="margin:5px 0; font-size:16px;"><strong>Subtotal:</strong> ₹<span id="subtotal">0</span></p>
+  <p style="margin:5px 0; font-size:16px;"><strong>GST:</strong> ₹<span id="gstAmount">0</span></p>
+  <p style="margin:5px 0; font-size:18px; color:#2563eb;"><strong>Total:</strong> ₹<span id="total">0</span></p>
+</div>
+
+<button onclick="generateInvoice()" style="width:90%; padding:12px; margin:15px 5%; background:#27ae60; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">Generate Invoice</button>
+<button onclick="clearCart()" style="width:90%; padding:10px; margin:10px 5%; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">Clear Cart</button>
+<button onclick="openSection('dashboard')" style="width:90%; padding:10px; margin:10px 5%; background:#95a5a6; color:white; border:none; border-radius:5px; cursor:pointer;">Back</button>
+
+<h3 style="margin-top:20px;">Generated Invoice:</h3>
+<div id="invoiceResult" style="border:1px solid #ddd; padding:15px; border-radius:5px; background:#f9f9f9; max-height:400px; overflow-y:auto; white-space:pre-wrap; font-family:monospace; font-size:12px;">
+  Invoice will appear here
+</div>
+</div>
+
+<!-- PRODUCTS -->
+<div id="products" class="section">
+<h2>Product Manager</h2>
+<div style="max-width:500px; margin:0 auto; padding:20px; background:white; border-radius:10px; box-shadow:0 2px 10px #ccc;">
+  <input id="productName" placeholder="Product Name" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+  <input id="productPrice" type="number" placeholder="Price" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+  
+  <label for="productImage" style="display:block; margin:15px 0; padding:20px; background:#f0f0f0; border:2px dashed #2563eb; border-radius:5px; cursor:pointer; text-align:center; font-weight:bold; color:#2563eb; font-size:16px;">
+    📷 Click to Upload Product Image
+  </label>
+  <input id="productImage" type="file" accept="image/*" style="display:none;">
+  
+  <div id="imagePreviewContainer" style="display:none; margin:20px 0;">
+    <img id="imagePreview" src="" alt="Preview" style="width:100%; max-height:300px; object-fit:contain; border-radius:8px; border:2px solid #2563eb;">
+    <p style="text-align:center; margin:10px 0 0 0; color:#666; font-size:12px;">Image Preview</p>
+  </div>
+  
+  <button onclick="addProduct()" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">Add Product</button>
+</div>
+
+<br><br>
+<h3 style="text-align:center;">Stored Products:</h3>
+<div id="productList"></div>
+<br><br>
+<button onclick="openSection('dashboard')" style="display:block; margin:0 auto; padding:10px 20px;">Back</button>
+</div>
+
+<script>
+function openSection(id){
+  document.querySelectorAll('.section').forEach(s => s.style.display="none");
+  document.getElementById(id).style.display="block";
+  if(id === 'products') {
+    displayProducts();
+    document.getElementById('productImage').addEventListener('change', previewImage);
+  }
+  if(id === 'store') {
+    displayStoreProducts();
+  }
+  if(id === 'invoice') {
+    displayCart();
+  }
+  updateCartCount();
+}
+
+// Initialize cart count on page load
+window.addEventListener('load', function() {
+  updateCartCount();
+});
+
+function previewImage(e){
+  let file = e.target.files[0];
+  if(file){
+    let reader = new FileReader();
+    reader.onload = function(event){
+      document.getElementById('imagePreview').src = event.target.result;
+      document.getElementById('imagePreviewContainer').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function login(){
+  let username = document.getElementById('user').value.trim();
+  let password = document.getElementById('pass').value.trim();
+  
+  if(!username || !password){
+    alert('Please enter username and password');
+    return;
+  }
+  
+  if(username === 'admin' && password === 'admin'){
+    document.getElementById('user').value = '';
+    document.getElementById('pass').value = '';
+    openSection('dashboard');
+  } else {
+    alert('Invalid username or password!\n\nDefault credentials:\nUsername: admin\nPassword: admin');
+  }
+}
+
+function switchAuthTab(tab){
+  if(tab === 'signin'){
+    document.getElementById('signinForm').style.display = 'block';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('signinBtn').style.background = '#2563eb';
+    document.getElementById('registerBtn').style.background = '#95a5a6';
+  } else {
+    document.getElementById('signinForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('signinBtn').style.background = '#95a5a6';
+    document.getElementById('registerBtn').style.background = '#2563eb';
+  }
+  document.getElementById('authMessage').innerText = '';
+}
+
+function signin(){
+  let username = document.getElementById('signinUser').value.trim();
+  let password = document.getElementById('signinPass').value.trim();
+  let message = document.getElementById('authMessage');
+  
+  if(!username || !password){
+    message.innerText = 'Please enter username and password';
+    message.style.color = '#e74c3c';
+    return;
+  }
+  
+  // Try backend first
+  fetch('http://localhost:5000/api/signin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+    timeout: 5000
+  })
+  .then(response => response.json())
+  .then(data => {
+    if(data.success){
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      document.getElementById('signinUser').value = '';
+      document.getElementById('signinPass').value = '';
+      message.innerText = '';
+      setTimeout(() => openSection('dashboard'), 500);
+    } else {
+      message.innerText = data.message || 'Sign in failed';
+      message.style.color = '#e74c3c';
+    }
+  })
+  .catch(error => {
+    // Fallback: Local offline login
+    console.log('Backend unavailable, using offline login');
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+    let user = users.find(u => u.username === username && u.password === password);
+    
+    if(user){
+      localStorage.setItem('currentUser', JSON.stringify({id: user.id, username: user.username, email: user.email}));
+      document.getElementById('signinUser').value = '';
+      document.getElementById('signinPass').value = '';
+      message.innerText = '';
+      setTimeout(() => openSection('dashboard'), 500);
+    } else {
+      // Default admin login
+      if(username === 'admin' && password === 'admin'){
+        localStorage.setItem('currentUser', JSON.stringify({id: 1, username: 'admin', email: 'admin@billease.com'}));
+        document.getElementById('signinUser').value = '';
+        document.getElementById('signinPass').value = '';
+        message.innerText = '';
+        setTimeout(() => openSection('dashboard'), 500);
+      } else {
+        message.innerText = 'Invalid credentials';
+        message.style.color = '#e74c3c';
+      }
+    }
+  });
+}
+
+function register(){
+  let username = document.getElementById('registerUser').value.trim();
+  let email = document.getElementById('registerEmail').value.trim();
+  let password = document.getElementById('registerPass').value.trim();
+  let confirmPassword = document.getElementById('registerConfirmPass').value.trim();
+  let message = document.getElementById('authMessage');
+  
+  if(!username || !email || !password || !confirmPassword){
+    message.innerText = 'Please fill all fields';
+    message.style.color = '#e74c3c';
+    return;
+  }
+  
+  if(password !== confirmPassword){
+    message.innerText = 'Passwords do not match';
+    message.style.color = '#e74c3c';
+    return;
+  }
+  
+  if(password.length < 4){
+    message.innerText = 'Password must be at least 4 characters';
+    message.style.color = '#e74c3c';
+    return;
+  }
+  
+  // Call backend API
+  fetch('http://localhost:5000/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, email, password, confirmPassword })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if(data.success){
+      message.innerText = 'Registration successful! Please sign in';
+      message.style.color = '#27ae60';
+      
+      setTimeout(() => {
+        document.getElementById('registerUser').value = '';
+        document.getElementById('registerEmail').value = '';
+        document.getElementById('registerPass').value = '';
+        document.getElementById('registerConfirmPass').value = '';
+        switchAuthTab('signin');
+      }, 1500);
+    } else {
+      message.innerText = data.message || 'Registration failed';
+      message.style.color = '#e74c3c';
+    }
+  })
+  .catch(error => {
+    // Fallback: Local offline registration
+    console.log('Backend unavailable, using offline registration');
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+    
+    if(users.find(u => u.username === username)){
+      message.innerText = 'Username already exists';
+      message.style.color = '#e74c3c';
+      return;
+    }
+    
+    users.push({id: Date.now(), username, email, password});
+    localStorage.setItem('users', JSON.stringify(users));
+    
+    message.innerText = 'Registration successful! Please sign in';
+    message.style.color = '#27ae60';
+    
+    setTimeout(() => {
+      document.getElementById('registerUser').value = '';
+      document.getElementById('registerEmail').value = '';
+      document.getElementById('registerPass').value = '';
+      document.getElementById('registerConfirmPass').value = '';
+      switchAuthTab('signin');
+    }, 1500);
+  });
+}
+
+function generate(){
+  let amt = Number(document.getElementById('amount').value);
+  let gstPercent = Number(document.getElementById('gst').value);
+  let gstAmt = (amt * gstPercent) / 100;
+  let total = amt + gstAmt;
+  document.getElementById('result').innerText = "Total Payable: ₹" + total;
+}
+
+function addProduct(){
+  let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+  if(!currentUser){
+    alert('Please sign in first');
+    return;
+  }
+  
+  let name = document.getElementById('productName').value.trim();
+  let price = document.getElementById('productPrice').value.trim();
+  let imageFile = document.getElementById('productImage').files[0];
+  
+  if(!name || !price){
+    alert('Please fill all fields');
+    return;
+  }
+  
+  if(imageFile){
+    let reader = new FileReader();
+    reader.onload = function(e){
+      let image = e.target.result;
+      
+      // Send to backend
+      fetch('http://localhost:5000/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, name, price, image })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.success){
+          document.getElementById('productName').value = '';
+          document.getElementById('productPrice').value = '';
+          document.getElementById('productImage').value = '';
+          document.getElementById('imagePreviewContainer').style.display = 'none';
+          displayProducts();
+        } else {
+          alert('Error adding product: ' + data.message);
+        }
+      })
+      .catch(error => alert('Server error: ' + error.message));
+    };
+    reader.readAsDataURL(imageFile);
+  } else {
+    fetch('http://localhost:5000/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id, name, price, image: null })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if(data.success){
+        document.getElementById('productName').value = '';
+        document.getElementById('productPrice').value = '';
+        document.getElementById('productImage').value = '';
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+        displayProducts();
+      } else {
+        alert('Error adding product: ' + data.message);
+      }
+    })
+    .catch(error => alert('Server error: ' + error.message));
+  }
+}
+
+function displayProducts(){
+  let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+  if(!currentUser){
+    document.getElementById('productList').innerHTML = '<p style="text-align:center; color:#e74c3c;">Please sign in first</p>';
+    return;
+  }
+  
+  fetch('http://localhost:5000/api/products/' + currentUser.id)
+    .then(response => response.json())
+    .then(products => {
+      let html = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:25px; width:100%; max-width:1000px; margin:0 auto;">';
+      
+      if(products.length === 0){
+        html = '<p style="text-align:center; color:#999; margin-top:20px;">No products yet. Add your first product above!</p>';
+      } else {
+        products.forEach(product => {
+          let imgHtml = product.image ? '<img src="' + product.image + '" style="width:100%; height:200px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="enlargeImage(\'' + product.image.replace(/'/g, "\\'") + '\')">' : '<div style="width:100%; height:200px; background:#f0f0f0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; color:#999;">📷 No Image</div>';
+          html += '<div style="border:2px solid #ddd; border-radius:10px; padding:15px; background:white; box-shadow:0 3px 8px rgba(0,0,0,0.15); transition:transform 0.2s;" onmouseover="this.style.transform=\'scale(1.05)\';" onmouseout="this.style.transform=\'scale(1)\'">' +
+                  imgHtml +
+                  '<h4 style="margin:12px 0 8px 0; font-size:16px; color:#333;">' + product.name + '</h4>' +
+                  '<p style="margin:8px 0; font-size:20px; color:#2563eb; font-weight:bold;">₹' + product.price + '</p>' +
+                  '<button onclick="editImage(' + product.id + ')" style="width:100%; padding:8px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-bottom:8px;">📷 Edit Image</button>' +
+                  '<button onclick="deleteProduct(' + product.id + ')" style="width:100%; padding:8px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Delete</button>' +
+                  '</div>';
+        });
+        html += '</div>';
+      }
+      
+      document.getElementById('productList').innerHTML = html;
+    })
+    .catch(error => {
+      console.error('Error fetching products:', error);
+      document.getElementById('productList').innerHTML = '<p style="text-align:center; color:#e74c3c;">Error loading products. Make sure server is running.</p>';
+    });
+}
+
+function deleteProduct(productId){
+  if(confirm('Delete this product?')){
+    fetch('http://localhost:5000/api/products/' + productId, { method: 'DELETE' })
+      .then(response => response.json())
+      .then(data => {
+        if(data.success){
+          displayProducts();
+        } else {
+          alert('Error deleting product: ' + data.message);
+        }
+      })
+      .catch(error => alert('Server error: ' + error.message));
+  }
+}
+
+function editImage(productId){
+  let input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = function(e){
+    let file = e.target.files[0];
+    if(file){
+      let reader = new FileReader();
+      reader.onload = function(event){
+        let image = event.target.result;
+        
+        // Update via backend
+        fetch('http://localhost:5000/api/products/' + productId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if(data.success){
+            displayProducts();
+          } else {
+            alert('Error updating image: ' + data.message);
+          }
+        })
+        .catch(error => alert('Server error: ' + error.message));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  input.click();
+}
+
+function enlargeImage(src){
+  let modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:1000; cursor:pointer;';
+  let img = document.createElement('img');
+  img.src = src;
+  img.style.cssText = 'max-width:90%; max-height:90%; border-radius:10px;';
+  modal.appendChild(img);
+  modal.onclick = function(){ document.body.removeChild(modal); };
+  document.body.appendChild(modal);
+}
+
+function buyProduct(productId, productName, productPrice){
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  let existingItem = cart.find(item => item.id === productId);
+  
+  if(existingItem){
+    existingItem.quantity += 1;
+  } else {
+    cart.push({id: productId, name: productName, price: productPrice, quantity: 1});
+  }
+  
+  localStorage.setItem('cart', JSON.stringify(cart));
+  displayCart();
+  openSection('invoice');
+}
+
+function displayCart(){
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  let html = '';
+  let subtotal = 0;
+  
+  if(cart.length === 0){
+    document.getElementById('cartItems').innerHTML = '<p style="color:#999; text-align:center;">Your cart is empty</p>';
+    document.getElementById('subtotal').innerText = '0';
+    document.getElementById('gstAmount').innerText = '0';
+    document.getElementById('total').innerText = '0';
+    return;
+  }
+  
+  cart.forEach(item => {
+    let itemTotal = item.price * item.quantity;
+    subtotal += itemTotal;
+    html += '<div style="padding:10px; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">' +
+            '<div><strong>' + item.name + '</strong><br>₹' + item.price + ' x <input type="number" value="' + item.quantity + '" min="1" onchange="updateQuantity(' + item.id + ', this.value)" style="width:50px; padding:5px;"></div>' +
+            '<div><strong>₹' + itemTotal + '</strong></div>' +
+            '<button onclick="removeFromCart(' + item.id + ')" style="padding:5px 10px; background:#e74c3c; color:white; border:none; border-radius:3px; cursor:pointer;">Remove</button>' +
+            '</div>';
+  });
+  
+  let gstPercent = Number(document.getElementById('invoiceGst').value) || 0;
+  let gstAmount = (subtotal * gstPercent) / 100;
+  let total = subtotal + gstAmount;
+  
+  document.getElementById('cartItems').innerHTML = html;
+  document.getElementById('subtotal').innerText = subtotal;
+  document.getElementById('gstAmount').innerText = gstAmount.toFixed(2);
+  document.getElementById('total').innerText = total.toFixed(2);
+  updateCartCount();
+}
+
+function displayStoreProducts(){
+  let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+  if(!currentUser){
+    document.getElementById('storeProducts').innerHTML = '<p style="text-align:center; color:#e74c3c;">Please sign in first</p>';
+    return;
+  }
+  
+  // Try backend first
+  fetch('http://localhost:5000/api/products/' + currentUser.id)
+    .then(response => response.json())
+    .then(products => {
+      let html = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:25px; width:100%; max-width:1000px; margin:0 auto;">';
+      
+      if(products.length === 0){
+        html = '<p style="text-align:center; color:#999; margin-top:40px; font-size:18px;">No products available. Please add products from Manage Products section.</p>';
+      } else {
+        products.forEach(product => {
+          let imgHtml = product.image ? '<img src="' + product.image + '" style="width:100%; height:200px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="enlargeImage(\'' + product.image.replace(/'/g, "\\'") + '\')">' : '<div style="width:100%; height:200px; background:#f0f0f0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; color:#999;">📷 No Image</div>';
+          html += '<div style="border:2px solid #ddd; border-radius:10px; padding:15px; background:white; box-shadow:0 3px 8px rgba(0,0,0,0.15); transition:transform 0.2s;" onmouseover="this.style.transform=\'scale(1.05)\';" onmouseout="this.style.transform=\'scale(1)\'">' +
+                  imgHtml +
+                  '<h4 style="margin:12px 0 8px 0; font-size:16px; color:#333;">' + product.name + '</h4>' +
+                  '<p style="margin:8px 0; font-size:20px; color:#2563eb; font-weight:bold;">₹' + product.price + '</p>' +
+                  '<button onclick="buyProduct(' + product.id + ', \'' + product.name.replace(/'/g, "\\'") + '\', ' + product.price + ')" style="width:100%; padding:10px; background:#27ae60; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">🛒 Add to Cart</button>' +
+                  '</div>';
+        });
+        html += '</div>';
+      }
+      
+      document.getElementById('storeProducts').innerHTML = html;
+    })
+    .catch(error => {
+      // Fallback: Use localStorage
+      console.log('Backend unavailable, using local products');
+      let products = JSON.parse(localStorage.getItem('products')) || [];
+      let html = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:25px; width:100%; max-width:1000px; margin:0 auto;">';
+      
+      if(products.length === 0){
+        html = '<p style="text-align:center; color:#999; margin-top:40px; font-size:18px;">No products available. Please add products from Manage Products section.</p>';
+      } else {
+        products.forEach(product => {
+          let imgHtml = product.image ? '<img src="' + product.image + '" style="width:100%; height:200px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="enlargeImage(\'' + product.image.replace(/'/g, "\\'") + '\')">' : '<div style="width:100%; height:200px; background:#f0f0f0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; color:#999;">📷 No Image</div>';
+          html += '<div style="border:2px solid #ddd; border-radius:10px; padding:15px; background:white; box-shadow:0 3px 8px rgba(0,0,0,0.15); transition:transform 0.2s;" onmouseover="this.style.transform=\'scale(1.05)\';" onmouseout="this.style.transform=\'scale(1)\'">' +
+                  imgHtml +
+                  '<h4 style="margin:12px 0 8px 0; font-size:16px; color:#333;">' + product.name + '</h4>' +
+                  '<p style="margin:8px 0; font-size:20px; color:#2563eb; font-weight:bold;">₹' + product.price + '</p>' +
+                  '<button onclick="buyProduct(' + product.id + ', \'' + product.name.replace(/'/g, "\\'") + '\', ' + product.price + ')" style="width:100%; padding:10px; background:#27ae60; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">🛒 Add to Cart</button>' +
+                  '</div>';
+        });
+        html += '</div>';
+      }
+      
+      document.getElementById('storeProducts').innerHTML = html;
+    });
+}
+
+function updateCartCount(){
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  let count = cart.reduce((total, item) => total + item.quantity, 0);
+  document.getElementById('cartCount').innerText = count;
+}
+
+function updateQuantity(productId, quantity){
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  let item = cart.find(i => i.id === productId);
+  if(item){
+    item.quantity = parseInt(quantity) || 1;
+    localStorage.setItem('cart', JSON.stringify(cart));
+    displayCart();
+  }
+}
+
+function removeFromCart(productId){
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  cart = cart.filter(item => item.id !== productId);
+  localStorage.setItem('cart', JSON.stringify(cart));
+  displayCart();
+}
+
+function clearCart(){
+  if(confirm('Clear all items from cart?')){
+    localStorage.removeItem('cart');
+    displayCart();
+    document.getElementById('invoiceResult').innerText = 'Invoice will appear here';
+  }
+}
+
+function generateInvoice(){
+  let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+  let customerName = document.getElementById('customer').value.trim();
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  
+  if(!currentUser){
+    alert('Please sign in first');
+    return;
+  }
+  
+  if(!customerName){
+    alert('Please enter customer name');
+    return;
+  }
+  
+  if(cart.length === 0){
+    alert('Cart is empty');
+    return;
+  }
+  
+  let subtotal = 0;
+  let items = [];
+  cart.forEach(item => {
+    let itemTotal = item.price * item.quantity;
+    subtotal += itemTotal;
+    items.push({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      total: itemTotal
+    });
+  });
+  
+  let gstPercent = Number(document.getElementById('invoiceGst').value) || 0;
+  let gstAmount = (subtotal * gstPercent) / 100;
+  let total = subtotal + gstAmount;
+  
+  // Save invoice to backend
+  fetch('http://localhost:5000/api/invoices', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId: currentUser.id,
+      customerName,
+      items,
+      subtotal: subtotal.toFixed(2),
+      gst: gstAmount.toFixed(2),
+      total: total.toFixed(2)
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if(data.success){
+      // Generate and display invoice
+      let invoice = '===================================\n';
+      invoice += '        BILLEASE INVOICE\n';
+      invoice += '===================================\n\n';
+      invoice += 'Invoice ID: ' + data.invoice.id + '\n';
+      invoice += 'Customer: ' + customerName + '\n';
+      invoice += 'Date: ' + new Date().toLocaleDateString() + '\n';
+      invoice += 'Time: ' + new Date().toLocaleTimeString() + '\n';
+      invoice += '-----------------------------------\n\n';
+      
+      items.forEach(item => {
+        invoice += item.name + '\n';
+        invoice += '  ₹' + item.price + ' x ' + item.quantity + ' = ₹' + item.total + '\n\n';
+      });
+      
+      invoice += '-----------------------------------\n';
+      invoice += 'Subtotal:        ₹' + subtotal.toFixed(2) + '\n';
+      invoice += 'GST (' + gstPercent + '%):           ₹' + gstAmount.toFixed(2) + '\n';
+      invoice += '===================================\n';
+      invoice += 'TOTAL:           ₹' + total.toFixed(2) + '\n';
+      invoice += '===================================\n\n';
+      invoice += 'Thank you for your purchase!\n';
+      
+      document.getElementById('invoiceResult').innerText = invoice;
+      alert('Invoice generated and saved successfully!');
+    } else {
+      alert('Error saving invoice: ' + data.message);
+    }
+  })
+  .catch(error => {
+    // Fallback: Local invoice generation
+    console.log('Backend unavailable, generating local invoice');
+    
+    let invoice = '===================================\n';
+    invoice += '        BILLEASE INVOICE\n';
+    invoice += '===================================\n\n';
+    invoice += 'Customer: ' + customerName + '\n';
+    invoice += 'Date: ' + new Date().toLocaleDateString() + '\n';
+    invoice += 'Time: ' + new Date().toLocaleTimeString() + '\n';
+    invoice += '-----------------------------------\n\n';
+    
+    items.forEach(item => {
+      invoice += item.name + '\n';
+      invoice += '  ₹' + item.price + ' x ' + item.quantity + ' = ₹' + item.total + '\n\n';
+    });
+    
+    invoice += '-----------------------------------\n';
+    invoice += 'Subtotal:        ₹' + subtotal.toFixed(2) + '\n';
+    invoice += 'GST (' + gstPercent + '%):           ₹' + gstAmount.toFixed(2) + '\n';
+    invoice += '===================================\n';
+    invoice += 'TOTAL:           ₹' + total.toFixed(2) + '\n';
+    invoice += '===================================\n\n';
+    invoice += 'Thank you for your purchase!\n';
+    
+    document.getElementById('invoiceResult').innerText = invoice;
+    alert('Invoice generated successfully!');
+  });
+}
+</script>
+
+</body>
+</html>
